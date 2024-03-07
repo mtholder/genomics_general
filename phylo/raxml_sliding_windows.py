@@ -52,7 +52,7 @@ def raxml_wrapper(windowQueue, resultQueue, windType, model, outgroup, raxml, mi
         if windType == "coordinate" or windType == "predefined": scaf,start,end,mid = (window.scaffold, window.limits[0], window.limits[1], window.midPos())
         else: scaf,start,end,mid = (window.scaffold, window.firstPos(), window.lastPos(), window.midPos())
         data = [window.scaffold, str(start), str(end), str(mid), str(Nsites)]
-        prefix = scaf + "_" + str(start) + "_" + str(end) + "_"
+        prefix = scaf.decode() + "_" + str(start) + "_" + str(end) + "_"
         if Nsites >= minSites:
             aln = genomics.genoToAlignment(window.seqDict(), genoFormat = "phased")
             indNames = window.names
