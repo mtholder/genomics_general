@@ -4,7 +4,7 @@ import argparse, sys, os, gzip, tempfile
 import numpy as np
 
 from multiprocessing import Process, Queue
-from multiprocessing.queues import SimpleQueue
+from multiprocessing import SimpleQueue
 from threading import Thread
 from time import sleep
 
