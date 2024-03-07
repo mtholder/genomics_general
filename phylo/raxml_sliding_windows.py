@@ -107,10 +107,12 @@ def raxml_wrapper(
                 window.lastPos(),
                 window.midPos(),
             )
-        data = [window.scaffold, str(start), str(end), str(mid), str(Nsites)]
+        data = [window.scaffold.decode(), str(start), str(end), str(mid), str(Nsites)]
         prefix = scaf.decode() + "_" + str(start) + "_" + str(end) + "_"
         if Nsites >= minSites:
-            aln = genomics.genoToAlignment(window.seqDict(), genoFormat="phased")
+            bytes_dict = window.seqDict()
+            str_dict = {k.decode(): [i.decode() for i in v] for k, v in bytes_dict.items()}
+            aln = genomics.genoToAlignment(str_dict, genoFormat="phased")
             indNames = window.names
             sitesPerInd = aln.seqNonNan()
             if min(sitesPerInd) >= minPerInd and (
@@ -142,8 +144,9 @@ def raxml_wrapper(
                 tree = "NA\n"
         else:
             tree = "NA\n"
-
-        resultQueue.put((windowNumber, "\t".join(data), tree))
+        dj = "\t".join(data)
+        tp = (windowNumber, dj, tree)
+        resultQueue.put(tp)
 
 
 """a function that watches the result queue and sorts results."""
@@ -189,7 +192,7 @@ def writer(writeQueue, dataFile, treesFile):
         if verbose:
             print("Writer received result", resNumber, file=sys.stderr)
         dataFile.write(data + "\n")
-        treesFile.write(tree)
+        treesFile.write(tree.encode("utf-8"))
         resultsWritten += 1
         resultsHandled += 1
 
