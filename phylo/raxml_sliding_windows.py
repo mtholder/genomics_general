@@ -26,7 +26,7 @@ def raxTree(seqArray, seqNames, model, raxml, outgroup = None, prefix = "", test
         og = ""
     #raxCommand = raxml + " -s temp." + uniqueTag + ".phy -n " + uniqueTag + " -m " + model + og + " -V -f d -p 12345 --silent"
     raxCommand = raxml + " -s " + tempAln.name + " -n " + localName + " -m " + model + og + " -V -f d -p 12345 --silent >>" + log
-    if test: print >> sys.stderr, "raxml command:\n", raxCommand
+    if test: print("raxml command:\n", raxCommand, file=sys.stderr)
     os.system(raxCommand)
     #try retrieve the result  
     try:
@@ -48,7 +48,7 @@ def raxml_wrapper(windowQueue, resultQueue, windType, model, outgroup, raxml, mi
     while True:
         windowNumber,window = windowQueue.get()
         Nsites = window.seqLen()
-        if test or verbose: print >> sys.stderr, "Window", windowNumber, "received for analysis, length:", Nsites
+        if test or verbose: print("Window", windowNumber, "received for analysis, length:", Nsites, file=sys.stderr)
         if windType == "coordinate" or windType == "predefined": scaf,start,end,mid = (window.scaffold, window.limits[0], window.limits[1], window.midPos())
         else: scaf,start,end,mid = (window.scaffold, window.firstPos(), window.lastPos(), window.midPos())
         data = [window.scaffold, str(start), str(end), str(mid), str(Nsites)]
@@ -75,11 +75,11 @@ def sorter(resultQueue, writeQueue, verbose):
         resNumber,data,tree = resultQueue.get()
         resultsReceived += 1
         if verbose:
-            print >> sys.stderr, "Sorter received result", resNumber
+            print("Sorter received result", resNumber, file=sys.stderr)
         if resNumber == expect:
             writeQueue.put((resNumber,data,tree))
             if verbose:
-                print >> sys.stderr, "Result", resNumber, "sent to writer"
+                print("Result", resNumber, "sent to writer", file=sys.stderr)
             expect +=1
             #now check buffer for further results
             while True:
@@ -87,7 +87,7 @@ def sorter(resultQueue, writeQueue, verbose):
                     data,tree = sortBuffer.pop(str(expect))
                     writeQueue.put((expect,data,tree))
                     if verbose:
-                        print >> sys.stderr, "Result", expect, "sent to writer"
+                        print("Result", expect, "sent to writer", file=sys.stderr)
                     expect +=1
                 except:
                     break
@@ -102,7 +102,7 @@ def writer(writeQueue, dataFile, treesFile):
     while True:
         resNumber,data,tree = writeQueue.get()
         if verbose:
-            print >> sys.stderr, "Writer received result", resNumber
+            print("Writer received result", resNumber, file=sys.stderr)
         dataFile.write(data + "\n")
         treesFile.write(tree)
         resultsWritten += 1
@@ -113,7 +113,7 @@ def writer(writeQueue, dataFile, treesFile):
 def checkStats():
     while True:
         sleep(10)
-        print >> sys.stderr, windowsQueued, "windows queued | ", resultsReceived, "results received | ", resultsWritten, "results written."
+        print(windowsQueued, "windows queued | ", resultsReceived, "results received | ", resultsWritten, "results written.", file=sys.stderr)
 
 
 ####################################################################################################################
@@ -189,7 +189,7 @@ else: indNames = None
 
 if args.outgroup:
     outgroup = args.outgroup.split(",")
-    if test or verbose: print >> sys.stderr, "outgroups:", " ".join(outgroup)
+    if test or verbose: print("outgroups:", " ".join(outgroup), file=sys.stderr)
 
 else: outgroup = None
 
@@ -228,7 +228,7 @@ treesFile = gzip.open(prefix + ".trees.gz", "w")
 if exclude:
     scafsFile = open(exclude, "rU")
     scafsToExclude = [line.rstrip() for line in scafsFile.readlines()]
-    print >> sys.stderr, len(scafsToExclude), "scaffolds will be excluded."
+    print(len(scafsToExclude), "scaffolds will be excluded.", file=sys.stderr)
     scafsFile.close()
 else:
     scafsToExclude = None
@@ -236,7 +236,7 @@ else:
 if include:
     scafsFile = open(include, "rU")
     scafsToInclude = [line.rstrip() for line in scafsFile.readlines()]
-    print >> sys.stderr, len(scafsToInclude), "scaffolds will be analysed."
+    print(len(scafsToInclude), "scaffolds will be analysed.", file=sys.stderr)
     scafsFile.close()
 else:
     scafsToInclude = None
@@ -267,7 +267,7 @@ for x in range(threads):
                                                    outgroup, raxml, minSites, minPerInd, args.minSNPs, test,))
     worker.daemon = True
     worker.start()
-    print >> sys.stderr, "started worker", x
+    print("started worker", x, file=sys.stderr)
     
 
 '''thread for sorting results'''
@@ -303,10 +303,10 @@ for window in windowGenerator:
     #simpleque has no max, so to make sure we haven't gotten ahead of ourselves, we compare windowsQueued to resultsReceived
     while windowsQueued - resultsReceived >= 50:
         sleep(10)
-        if test or verbose: print >> sys.stderr, "Waiting for queue to clear..."
+        if test or verbose: print("Waiting for queue to clear...", file=sys.stderr)
     
     if test or verbose:
-        print >> sys.stderr, "Sending window", windowsQueued, "to queue. Length:", window.seqLen()
+        print("Sending window", windowsQueued, "to queue. Length:", window.seqLen(), file=sys.stderr)
     
     windowQueue.put((windowsQueued,window))
     windowsQueued += 1
@@ -314,7 +314,7 @@ for window in windowGenerator:
 
 ############################################################################################################################################
 
-print >> sys.stderr, "\nWriting final results...\n"
+print("\nWriting final results...\n", file=sys.stderr)
 while resultsHandled < windowsQueued:
   sleep(1)
 
@@ -323,10 +323,10 @@ sleep(5)
 dataFile.close()
 treesFile.close()
 
-print >> sys.stderr, str(windowsQueued), "windows were analysed.\n"
-print >> sys.stderr, str(resultsWritten), "results were written.\n"
+print(str(windowsQueued), "windows were analysed.\n", file=sys.stderr)
+print(str(resultsWritten), "results were written.\n", file=sys.stderr)
 
-print "\nDone."
+print("\nDone.")
 
 sys.exit()
 
