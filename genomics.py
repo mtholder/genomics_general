@@ -34,11 +34,11 @@ ALLTYPES = (
     "ACGT",
 )
 
-diploHaploDict = dict(zip(DIPLOTYPES, PAIRS))
-haploDiploDict = dict(zip(PAIRS, DIPLOTYPES))
-diploHomoDict = dict(zip(DIPLOTYPES, HOMOTYPES))
-basesIupacDict = dict(zip(ALLTYPES, IUPAC))
-iupacBasesDict = dict(zip(IUPAC, ALLTYPES))
+diploHaploDict = dict(list(zip(DIPLOTYPES, PAIRS)))
+haploDiploDict = dict(list(zip(PAIRS, DIPLOTYPES)))
+diploHomoDict = dict(list(zip(DIPLOTYPES, HOMOTYPES)))
+basesIupacDict = dict(list(zip(ALLTYPES, IUPAC)))
+iupacBasesDict = dict(list(zip(IUPAC, ALLTYPES)))
 
 
 def haplo(diplo):
@@ -71,7 +71,7 @@ else:
     # translation table for bases
     complementTrans = string.maketrans("ACGTKMRYVHBDN", "TGCAMKYRBDVHN")
 
-complementDict = dict(zip(list("ACGTKMRYVHBDN"), list("TGCAMKYRBDVHN")))
+complementDict = dict(list(zip(list("ACGTKMRYVHBDN"), list("TGCAMKYRBDVHN"))))
 
 
 def complement(seq):
@@ -388,7 +388,7 @@ def CDSsequence(
     if seqDict is None:
         # if dictionary of bases for each position is not provided, make it
         assert len(seq) == len(seqPos)
-        seqDict = defaultdict(lambda: "N", zip(seqPos, seq))
+        seqDict = defaultdict(lambda: "N", list(zip(seqPos, seq)))
 
     # for each exon, extract a list of scaffold positions
     codingPositions = CDSpositions(exonStarts, exonEnds, strand, trim=trim)
@@ -415,7 +415,7 @@ def countStops(cds, includeTerminal=False):
 
 # subset list into smaller lists
 def subset(things, subLen, asLists=False):
-    starts = range(0, len(things), subLen)
+    starts = list(range(0, len(things), subLen))
     ends = [start + subLen for start in starts]
     if asLists:
         return [list(things[starts[i] : ends[i]]) for i in range(len(starts))]
@@ -439,10 +439,10 @@ def chunkList(l, nChunks=None, chunkSize=None, return_indices=False):
         assert N == sum(chunkSize), "Chunk sizes must sum to list length"
 
     indices = []
-    r = range(N)
+    r = list(range(N))
     i = 0
     for c in chunkSize:
-        indices.append(range(i, i + c))
+        indices.append(list(range(i, i + c)))
         i = i + c
     if return_indices:
         return (
@@ -455,7 +455,7 @@ def chunkList(l, nChunks=None, chunkSize=None, return_indices=False):
 
 def invertDictOfLists(d):
     new = {}
-    for key, lst in d.items():
+    for key, lst in list(d.items()):
         for i in lst:
             try:
                 new[i].append(key)
@@ -481,7 +481,11 @@ def uniqueIndices(things, preserveOrder=False, asDict=False):
     T, X, I = np.unique(things, return_index=True, return_inverse=True)
     indices = np.array([np.where(I == i)[0] for i in range(len(T))])
     order = np.argsort(X) if preserveOrder else np.arange(len(X))
-    return dict(zip(T[order], indices[order])) if asDict else [T[order], indices[order]]
+    return (
+        dict(list(zip(T[order], indices[order])))
+        if asDict
+        else [T[order], indices[order]]
+    )
 
 
 #################################################################################################
@@ -652,9 +656,11 @@ def haploToPhased(seqs, seqNames=None, ploidy=2, randomPhase=False):
         else:
             assert Nseqs == sum(_ploidy_), "Ploidys must sum to number of sequences"
 
-        indices = chunkList(range(Nseqs), chunkSize=_ploidy_, return_indices=True)[1]
+        indices = chunkList(
+            list(range(Nseqs)), chunkSize=_ploidy_, return_indices=True
+        )[1]
 
-        zipSeqs = [zip(*[seqs[x] for x in ind]) for ind in indices]
+        zipSeqs = [list(zip(*[seqs[x] for x in ind])) for ind in indices]
         # randomize phase if necessary
         if randomPhase:
             for i in range(len(indices)):
@@ -680,7 +686,7 @@ def makeHaploidNames(names, ploidy=2):
         ploidy = ploidy * len(names)
     if np.all(np.array(ploidy) == 1):
         return names
-    ploidyDict = dict(zip(names, ploidy))
+    ploidyDict = dict(list(zip(names, ploidy)))
     return [
         n + "_" + letter
         for n in names
@@ -726,7 +732,7 @@ class GenomeSite:
                 sampleNames
             ), "Genotypes and sample names must be of equal length."
             self.sampleNames = sampleNames
-            genoDict = dict(zip(sampleNames, genotypes))
+            genoDict = dict(list(zip(sampleNames, genotypes)))
         else:
             self.sampleNames = (
                 sampleNames if sampleNames is not None else sorted(genoDict.keys())
@@ -737,7 +743,7 @@ class GenomeSite:
         self.ploidy = (
             ploidyDict
             if ploidyDict
-            else dict(zip(self.sampleNames, [None] * len(self.sampleNames)))
+            else dict(list(zip(self.sampleNames, [None] * len(self.sampleNames))))
         )
 
         self.genotypes = {}
@@ -830,7 +836,9 @@ class GenomeSite:
             if alleles is None:
                 alleles = self.alleles(byFreq=True)
             if codeDict is None:
-                codeDict = dict(zip(alleles, [str(x) for x in range(len(alleles))]))
+                codeDict = dict(
+                    list(zip(alleles, [str(x) for x in range(len(alleles))]))
+                )
             return [
                 self.genotypes[sample].asCoded(codeDict, missing) for sample in samples
             ]
@@ -911,7 +919,7 @@ def baseFreqs(bases, asCounts=False, asDict=False):
     else:
         freqs = counts / sum(counts * 1.0)
     if asDict:
-        return dict(zip(["A", "C", "G", "T"], freqs))
+        return dict(list(zip(["A", "C", "G", "T"], freqs)))
     else:
         return freqs
 
@@ -1182,7 +1190,7 @@ def siteTest(
         if HWE_P:
             # if there are defined pops, check all of them
             if site.pops is not {}:
-                for popName in site.pops.keys():
+                for popName in list(site.pops.keys()):
                     if not inHWE(
                         site.asList(pop=popName, mode="diplo"), HWE_P, side=HWE_side
                     ):
@@ -1217,9 +1225,9 @@ def siteTest(
             # otherwise
             if minPopAlleles or maxPopAlleles:
                 if minPopAlleles == None:
-                    minPopAlleles = dict(zip(popNames, [0] * len(popNames)))
+                    minPopAlleles = dict(list(zip(popNames, [0] * len(popNames))))
                 if maxPopAlleles == None:
-                    maxPopAlleles = dict(zip(popNames, [4] * len(popNames)))
+                    maxPopAlleles = dict(list(zip(popNames, [4] * len(popNames))))
                 for x in range(len(popNames)):
                     if (
                         not minPopAlleles[popNames[x]]
@@ -1233,7 +1241,7 @@ def siteTest(
             popFreqs = [site.baseFreqs(pop=popName) for popName in popNames]
             freqDiffs = [
                 popFreqs[c[0]] - popFreqs[c[1]]
-                for c in list(itertools.combinations(range(len(popNames)), 2))
+                for c in list(itertools.combinations(list(range(len(popNames))), 2))
             ]
             if not np.any(np.absolute(np.concatenate(freqDiffs)) >= nearlyFixedDiff):
                 return False
@@ -1318,7 +1326,7 @@ class Alignment:
             assert len(positions) == self.l, "Positions must match sequence length."
             self.positions = positions
         else:
-            self.positions = range(1, self.l + 1)
+            self.positions = list(range(1, self.l + 1))
 
         if names is None:
             names = np.arange(self.N)
@@ -1336,7 +1344,7 @@ class Alignment:
             assert len(groups) == self.N, "Incorrect number of groups."
             self.groups = np.array(groups)
             self.indGroupDict = dict(
-                zip(self.names, [makeList(g) for g in self.groups])
+                list(zip(self.names, [makeList(g) for g in self.groups]))
             )
             self.groupIndDict = invertDictOfLists(self.indGroupDict)
         elif groupIndDict is not None:
@@ -1351,7 +1359,7 @@ class Alignment:
                 [None] * self.N
             )  # groups is just a list of names, giving the group name for each sample
             self.indGroupDict = dict(
-                zip(self.names, [makeList(g) for g in self.groups])
+                list(zip(self.names, [makeList(g) for g in self.groups]))
             )
             self.groupIndDict = {}
 
@@ -1442,7 +1450,7 @@ class Alignment:
                 self.pairDist(x[0], x[1]) if len(x) == 2 else np.NaN
                 for x in sampleIndices
             ]
-        return dict(zip(sampleNames, hets)) if not asList else hets
+        return dict(list(zip(sampleNames, hets))) if not asList else hets
 
     # makes a dict of average distance among samples.
     # if all are haploid, this is just a dictionary of the output of distMatrix()
@@ -1458,7 +1466,7 @@ class Alignment:
             pairDists = {}
             for sampleName in sampleNames:
                 pairDists[sampleName] = {}
-            for i, j in itertools.product(range(n), repeat=2):
+            for i, j in itertools.product(list(range(n)), repeat=2):
                 pairDists[sampleNames[i]][sampleNames[j]] = np.nanmean(
                     distMat[np.ix_(sampleIndices[i], sampleIndices[j])]
                 )
@@ -1466,7 +1474,7 @@ class Alignment:
             return pairDists
         else:
             indDistMat = np.zeros(n, n)
-            for i, j in itertools.combinations_with_replacement(range(n), 2):
+            for i, j in itertools.combinations_with_replacement(list(range(n)), 2):
                 indDistMat[i, j] = indDistMat[j, i] = np.nanmean(
                     distMat[np.ix_(sampleIndices[i], sampleIndices[j])]
                 )
@@ -1591,7 +1599,7 @@ class Alignment:
 
     def siteNonNan(self, sites=None, prop=False):
         if sites is None:
-            sites = range(self.l)
+            sites = list(range(self.l))
         else:
             sites = makeList(sites)
         if prop:
@@ -1614,7 +1622,7 @@ class Alignment:
 
     def siteFreqs(self, sites=None, asCounts=False):
         if sites is None:
-            sites = range(self.l)
+            sites = list(range(self.l))
         else:
             sites = makeList(sites)
         return np.array(
@@ -1666,7 +1674,9 @@ class Alignment:
         if asList:
             return sampleAlleles
         else:
-            return [dict(zip(sampleNames, sampleAlleles[i])) for i in range(self.l)]
+            return [
+                dict(list(zip(sampleNames, sampleAlleles[i]))) for i in range(self.l)
+            ]
 
     def LDmatrix(self, stat="r2"):
         LDmat = np.zeros(shape=(self.l, self.l))
@@ -1707,7 +1717,7 @@ def genoToAlignment(seqDict, sampleData=None, genoFormat="diplo", positions=None
     groups = []
     haploidSeqs = []
     # first pseudo phase all seqs if necessary
-    for indName in seqDict.keys():
+    for indName in list(seqDict.keys()):
         seqList = splitSeq(seqDict[indName], genoFormat)
         ploidy = (
             sampleData.ploidy[indName]
@@ -1786,7 +1796,7 @@ def uniqueIndices(things, preserveOrder=False, asDict=False):
     indices = [np.where(I == i)[0] for i in range(len(T))]
     order = np.argsort(X) if preserveOrder else np.arange(len(X))
     return (
-        dict(zip(T[order], [indices[i] for i in order]))
+        dict(list(zip(T[order], [indices[i] for i in order])))
         if asDict
         else [T[order], [indices[i] for i in order]]
     )
@@ -1939,7 +1949,7 @@ class SampleData:
         self, indNames=[], popNames=None, popInds=[], popNumbers=None, ploidyDict=None
     ):
         if popNumbers is None:
-            popNumbers = range(len(popInds))
+            popNumbers = list(range(len(popInds)))
         if popNames is None:
             popNames = [str(x) for x in popNumbers]
         assert (
@@ -1956,9 +1966,9 @@ class SampleData:
             self.popInds[popNumbers[x]] = popInds[x]
         self.indNames = indNames
         if ploidyDict:
-            self.ploidy = dict(zip(indNames, [ploidyDict[i] for i in indNames]))
+            self.ploidy = dict(list(zip(indNames, [ploidyDict[i] for i in indNames])))
         else:
-            self.ploidy = dict(zip(indNames, [2] * len(indNames)))
+            self.ploidy = dict(list(zip(indNames, [2] * len(indNames))))
 
     def getPop(self, indName):
         pop = [p for p in self.popNames if indName in self.popInds[p]]
@@ -2375,64 +2385,68 @@ def fourPop(aln, P1, P2, P3, P4, minData, polarize=False, fixed=False):
         sitesUsed = len(alleleIndex[0])
 
         return dict(
-            zip(
-                [
-                    "fhom",
-                    "fhom'",
-                    "D",
-                    "fd",
-                    "fd'",
-                    "fdm",
-                    "fdm'",
-                    "fdh",
-                    "fdh2",
-                    "fh",
-                    "ABBA",
-                    "BABA",
-                    "ABAA",
-                    "BAAA",
-                    "sitesUsed",
-                ],
-                [
-                    f1,
-                    f2,
-                    d,
-                    fd1,
-                    fd_new1,
-                    fdm1,
-                    fdm_new1,
-                    fdh1,
-                    fdh21,
-                    fh1,
-                    abba,
-                    baba,
-                    abaa,
-                    baaa,
-                    sitesUsed,
-                ],
+            list(
+                zip(
+                    [
+                        "fhom",
+                        "fhom'",
+                        "D",
+                        "fd",
+                        "fd'",
+                        "fdm",
+                        "fdm'",
+                        "fdh",
+                        "fdh2",
+                        "fh",
+                        "ABBA",
+                        "BABA",
+                        "ABAA",
+                        "BAAA",
+                        "sitesUsed",
+                    ],
+                    [
+                        f1,
+                        f2,
+                        d,
+                        fd1,
+                        fd_new1,
+                        fdm1,
+                        fdm_new1,
+                        fdh1,
+                        fdh21,
+                        fh1,
+                        abba,
+                        baba,
+                        abaa,
+                        baaa,
+                        sitesUsed,
+                    ],
+                )
             )
         )
     else:
         return dict(
-            zip(
-                [
-                    "fhom",
-                    "fhom'",
-                    "D",
-                    "fd",
-                    "fd'",
-                    "fdm",
-                    "fdm'",
-                    "fdh",
-                    "fdh2",
-                    "fh",
-                    "ABBA",
-                    "BABA",
-                    "ABAA",
-                    "BAAA",
-                    "sitesUsed",
-                ],
-                [np.NaN] * 14 + [0],
+            list(
+                zip(
+                    [
+                        "fhom",
+                        "fhom'",
+                        "D",
+                        "fd",
+                        "fd'",
+                        "fdm",
+                        "fdm'",
+                        "fdh",
+                        "fdh2",
+                        "fh",
+                        "ABBA",
+                        "BABA",
+                        "ABAA",
+                        "BAAA",
+                        "sitesUsed",
+                    ],
+                    [np.NaN] * 14 + [0],
+                )
             )
         )
 
@@ -2497,14 +2511,18 @@ def ABBABABA(aln, P1, P2, P3, P4, minData, polarize=True, fixed=False):
         sitesUsed = len(alleleIndex[0])
 
         return dict(
-            zip(
-                ["D", "fd", "fdM", "ABBA", "BABA", "sitesUsed"],
-                [_D_, _fd_, _fdm_, _ABBA_, _BABA_, sitesUsed],
+            list(
+                zip(
+                    ["D", "fd", "fdM", "ABBA", "BABA", "sitesUsed"],
+                    [_D_, _fd_, _fdm_, _ABBA_, _BABA_, sitesUsed],
+                )
             )
         )
     else:
         return dict(
-            zip(["D", "fd", "fdM", "ABBA", "BABA", "sitesUsed"], [np.NaN] * 6 + [0])
+            list(
+                zip(["D", "fd", "fdM", "ABBA", "BABA", "sitesUsed"], [np.NaN] * 6 + [0])
+            )
         )
 
 
@@ -2647,7 +2665,9 @@ class GenoWindow:
         if names is None:
             names = self.names
         indices = [self.names.index(n) for n in names]
-        return dict(zip(names, [[site[i] for site in self.sites] for i in indices]))
+        return dict(
+            list(zip(names, [[site[i] for site in self.sites] for i in indices]))
+        )
 
     def midPos(self):
         try:
@@ -2765,7 +2785,7 @@ def parseGenoLine(
             if type != str:
                 GTs = [float(GT) if type == float else int(GT) for GT in GTs]
             if asDict:
-                GTs = dict(zip(names, GTs))
+                GTs = dict(list(zip(names, GTs)))
             if (precompDict != None) and addToPrecomp:
                 precompDict[GTstring] = GTs
                 precompDict["__counter__"] += 1
@@ -2783,7 +2803,7 @@ def parseGenoLine(
 
 
 def getNext(generator):
-    return generator.next() if sys.version_info.major < 3 else next(generator)
+    return next(generator) if sys.version_info.major < 3 else next(generator)
 
 
 class GenoFileReader:
@@ -3332,7 +3352,7 @@ def makeAlnString(
 ):
     assert outFormat == "phylip" or outFormat == "fasta"
     if seqDict:
-        names, seqs = list(zip(*seqDict.items()))
+        names, seqs = list(zip(*list(seqDict.items())))
     else:
         assert len(names) == len(seqs)
     seqs = ["".join(s) for s in seqs]
@@ -3389,7 +3409,7 @@ def parsePhylip(string, asList=False):
         for i in range(len(headIdx) - 1)
     ]
     seqIdx = [
-        [range(headIdx[i] + 1 + j, headIdx[i + 1], Ns[i]) for j in range(Ns[i])]
+        [list(range(headIdx[i] + 1 + j, headIdx[i + 1], Ns[i])) for j in range(Ns[i])]
         for i in range(len(headIdx) - 1)
     ]
     seqs = [["".join([lineParts[y][1] for y in x]) for x in w] for w in seqIdx]
